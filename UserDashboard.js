@@ -7,52 +7,53 @@ import {
   ScrollView,
   Alert,
   ImageBackground,
- 
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-import { API } from './ApplyNav'; // Assuming you have an API constant to call the backend
+import { API } from './ApplyNav';
 
 const UserDashboard = ({ navigation }) => {
-  const [userName, setUserName] = useState('User'); // Default name if no name found
-
-  // Function to fetch userId from AsyncStorage
-  const fetchUserId = async () => {
-    try {
-      const storedUserId = await AsyncStorage.getItem('userId');
-      return storedUserId ? storedUserId : null;
-    } catch (error) {
-      console.error('Failed to fetch user ID from AsyncStorage:', error);
-      return null;
-    }
-  };
-
-  // Function to fetch user name from the backend using the userId
-  const fetchUserName = async () => {
-    const userId = await fetchUserId();
-    if (!userId) {
-      Alert.alert('Error', 'User is not logged in. Please log in again.');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API.Get_User_By_ID}?userId=${userId}`);
-      const data = await response.json();
-      
-      if (data && data.Name) {
-        setUserName(data.Name); // Set user name
-      } else {
-        setUserName('User');
-      }
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
-      Alert.alert('Error', 'Unable to fetch user name.');
-    }
-  };
+  const [userName, setUserName] = useState(null);
 
   useEffect(() => {
-    fetchUserName(); // Fetch user name when the component mounts
-  }, []);
+  const loadUserName = async () => {
+    const name = await AsyncStorage.getItem('userName');
+    if (name) {
+      setUserName(name);
+    } else {
+      console.warn('Name not found in AsyncStorage');
+      setUserName('Guest'); // Fallback
+    }
+  };
+  loadUserName();
+}, []);
+
+  // // ✅ Function to fetch user name using email
+  // const fetchUserName = async () => {
+  //   try {
+  //     const storedEmail = await AsyncStorage.getItem('userEmail');
+  //     if (!storedEmail) {
+  //       console.warn('Email not found in AsyncStorage');
+  //       return;
+  //     }
+
+  //     const response = await fetch(`${API.Get_User_By_Email}?email=${encodeURIComponent(storedEmail)}`);
+  //     const result = await response.json();
+
+  //     console.log("API Response:", result);
+
+  //     if (result.success && result.data.name) {
+  //       setUserName(result.data.name);
+  //     } else {
+  //       Alert.alert('Error', result.message || 'Name not found');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching user name:', error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchUserName();
+  // }, []);
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -61,7 +62,7 @@ const UserDashboard = ({ navigation }) => {
         text: 'Logout',
         style: 'destructive',
         onPress: async () => {
-          await AsyncStorage.removeItem('userId'); // Remove userId on logout
+          await AsyncStorage.removeItem('userEmail');
           navigation.replace('Login');
         },
       },
@@ -72,7 +73,7 @@ const UserDashboard = ({ navigation }) => {
     <ImageBackground source={require('./assets/bg1.jpeg')} style={styles.backgroundImage}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.card}>
-          <Text style={styles.title}>Welcome, {userName}</Text> {/* Display fetched name */}
+          <Text style={styles.title}>Welcome, {userName}</Text>
 
           <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('RecommendedBooks')}>
             <Text style={styles.buttonText}>Teacher Recommendations</Text>
